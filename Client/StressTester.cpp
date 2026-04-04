@@ -1,5 +1,10 @@
-#include "PostgresConnector.h"
+#include "StressTester.h"
+#include "../Services/UserService.h"
+#include "../Services/UserService.h"
+#include "../Services/user_service.pb.h"
+#include "../Services/user_service.grpc.pb.h"
 
+#include <grpcpp/grpcpp.h>
 #include <array>
 
 constexpr std::array names = {
@@ -23,7 +28,33 @@ constexpr std::array surnames = {"ABBOTT", "ARMSTRONG", "ATKINS", "AUSTIN", "BAL
                                  "KELLEY", "KENT", "KERR", "LAMBERT", "LAWSON", "LITTLE", "LONG", "LUCAS", "MACDONALD", "MACKENZIE", "MANN", "MANNING",
                                  "MARLOW", "MAY", "MCCARTHY", "MCDONALD", "MCLEAN", "MEYER", "NASH", "NEAL", "NEWTON"};
 
-void PostgresConnector::testFillUsers()
+void StressTester::testUserService()
+{
+
+     int threads = 50;
+
+    std::vector<std::thread> pool;
+
+    for (int i = 0; i < threads; ++i) {
+        pool.emplace_back(worker, i);
+    }
+
+    // мониторинг
+    while (true) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::cout << "RPS ~ "
+                  << success.load() << " success, "
+                  << failed.load() << " failed"
+                  << std::endl;
+
+        success = 0;
+        failed = 0;
+    }
+
+    for (auto& t : pool) t.join();
+}
+
+void StressTester::testFillUsers()
 {
     if (connector->is_open())
     {
@@ -47,20 +78,69 @@ void PostgresConnector::testFillUsers()
     }
 }
 
-void PostgresConnector::fillUpBalances()
+void StressTester::fillUpBalances()
 {
     if (connector->is_open())
     {
         pqxx::work work(*connector);
-        
+
         pqxx::result r = work.exec("SELECT COUNT(*) FROM users");
         auto usersCount = r[0][0].as<size_t>();
 
-          work.exec(
-           "UPDATE users SET balance = balance + (5000 + random() * (100000 - 5000))::numeric(18,2);");
+        work.exec(
+            "UPDATE users SET balance = balance + (5000 + random() * (100000 - 5000))::numeric(18,2);");
 
         work.commit();
 
         std::cout << "balances updated : " << usersCount << " rows" << std::endl;
     }
+}
+
+void StressTester::worker()
+{
+    auto channel = grpc::CreateChannel("localhost:6868",
+                                       grpc::InsecureChannelCredentials());
+
+    auto stub = UserService::NewStub(channel);
+
+    while (true)
+    {
+        user_service::LoginRequest request;
+        request.mutable_user()->set_email("test@mail.com");
+        request.mutable_user()->set_password("1234");
+
+        user_service::LoginResponse response;
+        grpc::ClientContext context;
+
+        auto status = stub->Login(&context, request, &response);
+
+        if (status.ok())
+        {
+            success++;
+        }
+        else
+        {
+            failed++;
+        }
+    }
+}
+
+void utilDatabaseConnection()
+{
+    // try
+    // {
+    //     std::string dbCredentials = "host = " + host + " "
+    //                                                    "port= " +
+    //                                 port + " "
+    //                                        "dbname= " +
+    //                                 dbName + " "
+    //                                          "user=betting_admin "
+    //                                          "password=kiba";
+
+    //     connector = std::make_unique<pqxx::connection>(dbCredentials.data());
+    // }
+    // catch (const std::exception &e)
+    // {
+    //     std::cerr << "Error: " << e.what() << std::endl;
+    // }
 }
