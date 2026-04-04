@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package server_config;
+
+import "google/protobuf/empty.proto";
+
+message User {
+    int32 id = 1;
+    string name = 2;
+    string password = 3;
+    string email = 4;
+}
+
+message SignInRequest {
+    User user = 1;
+}
+
+message SignInResponse {
+    int32 id = 1;
+    bool success = 2;
+}
+
+message LoginRequest{
+    string email = 1;
+    string password = 2;
+}
+
+message LoginResponse{
+    User user = 1;
+}
+
+service Server {
+    rpc SignIn(SignInRequest)
+        returns (SignInResponse);
+
+    rpc Login (LoginRequest)
+    returns (LoginResponse);
+}
