@@ -32,7 +32,7 @@ set(PROTO_SOURCES
 # ── client ────────────────────────────────────────────────────────────────
 add_executable(client
     Client/main.cpp
-    Client/PostgresConnector.cpp
+    Client/StressTester.cpp
      ${PROTO_SOURCES}
 )
 

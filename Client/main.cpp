@@ -8,6 +8,7 @@
 #include "../Services/UserService.h"
 #include "../Services/user_service.pb.h"
 #include "../Services/user_service.grpc.pb.h"
+#include "StressTester.h"
 
 namespace asio = boost::asio;
 using tcp = asio::ip::tcp;
@@ -21,18 +22,7 @@ constexpr int connectionType = 1;
 
 int main()
 {
-    // std::unique_ptr<IConnector> connector;
-
-    // if (connectionType == CONNECTION_TYPE_GRPC)
-    // {
-    //     connector = std::make_unique<GrpcConnectorImpl>();
-    // }
-    // else if (connectionType == CONNECTION_TYPE_RAW_TCP)
-    // {
-    //     connector = std::make_unique<RawSocketConnectorImpl>();
-    // }
-
-    // connector->initConnection();
-    // connector->sendSignInRequest();
+   auto stressTester = std::make_unique<StressTester>();
+   stressTester->testUserService();
 
 }

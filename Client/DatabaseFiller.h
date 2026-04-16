@@ -29,22 +29,22 @@ public:
     }
 
     void DatabaseFiller::fillUpBalances()
-{
-    if (connector->is_open())
     {
-        pqxx::work work(*connector);
+        if (connector->is_open())
+        {
+            pqxx::work work(*connector);
 
-        pqxx::result r = work.exec("SELECT COUNT(*) FROM users");
-        auto usersCount = r[0][0].as<size_t>();
+            pqxx::result r = work.exec("SELECT COUNT(*) FROM users");
+            auto usersCount = r[0][0].as<size_t>();
 
-        work.exec(
-            "UPDATE users SET balance = balance + (5000 + random() * (100000 - 5000))::numeric(18,2);");
+            work.exec(
+                "UPDATE users SET balance = balance + (5000 + random() * (100000 - 5000))::numeric(18,2);");
 
-        work.commit();
+            work.commit();
 
-        std::cout << "balances updated : " << usersCount << " rows" << std::endl;
+            std::cout << "balances updated : " << usersCount << " rows" << std::endl;
+        }
     }
-}
 
 private:
     std::unique_ptr<pqxx::connection> connector;

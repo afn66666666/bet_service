@@ -10,12 +10,10 @@ public:
     {
     }
     void testUserService();
-    void testFillUsers();
-    void fillUpBalances();
-    std::pair<std::string,std::string> generateLoginData(int chance);
+    std::pair<std::string,std::string> generateLoginData(int chance) const;
 private:
     void worker();
-
+    std::pair<std::string,std::string> getRandomData() const;
     std::atomic<int> success{0};
     std::atomic<int> failed{0};
 };
