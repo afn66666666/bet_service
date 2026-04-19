@@ -7,9 +7,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # ── Зависимости ─────────────────────────────────────────────
 
 find_package(Protobuf REQUIRED)
-
 find_package(Boost REQUIRED COMPONENTS system)
 find_package(PkgConfig REQUIRED)
+find_program(GRPC_CPP_PLUGIN grpc_cpp_plugin)
+
+if(NOT GRPC_CPP_PLUGIN)
+    message(FATAL_ERROR "grpc_cpp_plugin not found")
+endif()
 
 pkg_check_modules(PQXX REQUIRED libpqxx)
 
@@ -33,7 +37,7 @@ add_custom_command(
     ARGS
         -I ${CMAKE_CURRENT_SOURCE_DIR}/Services
         --grpc_out=${CMAKE_CURRENT_BINARY_DIR}
-        --plugin=protoc-gen-grpc=/usr/bin/grpc_cpp_plugin
+        --plugin=protoc-gen-grpc=${GRPC_CPP_PLUGIN}
         ${CMAKE_CURRENT_SOURCE_DIR}/Services/user_service.proto
     DEPENDS ${PROTO_FILE}
 )

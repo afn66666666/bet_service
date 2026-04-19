@@ -19,26 +19,37 @@ void StressTester::worker()
     while (true)
     {
         user_service::LoginRequest request;
-        auto data = generateLoginData(70);
+        auto data = generateLoginData(30);
         request.mutable_user()->set_email(data.first);
         request.mutable_user()->set_password(data.second);
 
         user_service::LoginResponse response;
         grpc::ClientContext context;
 
-
         auto status = stub->Login(&context, request, &response);
 
         if (status.ok())
         {
-            success++;
+            authorized++;
+        }
+        else if (status.error_code() == grpc::StatusCode::NOT_FOUND)
+        {
+            non_authorized++;
         }
         else
         {
+            auto msg = status.error_message();
             // std::cout << status.error_message() << std::endl;
             failed++;
         }
     }
+}
+
+void StressTester::refreshCounters()
+{
+    authorized = 0;
+    non_authorized = 0;
+    failed = 0;
 }
 
 std::pair<std::string, std::string> StressTester::generateLoginData(int chance) const
@@ -62,7 +73,7 @@ std::pair<std::string, std::string> StressTester::generateLoginData(int chance) 
 void StressTester::testUserService()
 {
 
-    int threads = 1;
+    int threads = 50;
 
     std::vector<std::thread> pool;
 
@@ -75,12 +86,12 @@ void StressTester::testUserService()
     {
         std::this_thread::sleep_for(std::chrono::seconds(1));
         std::cout << "RPS ~ "
-                  << success.load() << " success, "
+                  << authorized.load() << " authorized, "
+                  << non_authorized.load() << " invalid login\\pass, "
                   << failed.load() << " failed"
                   << std::endl;
 
-        success = 0;
-        failed = 0;
+        refreshCounters();
     }
 
     for (auto &t : pool)

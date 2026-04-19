@@ -1,38 +1,39 @@
 #include "pqxx/pqxx"
 #include "user_service.grpc.pb.h"
 #include "user_service.pb.h"
+#include "ConnectionPool.h"
 
 class UserService : public user_service::UserService::Service
 {
 
 public:
+public:
+    UserService(const std::string &credentials)
+    {
 
-    public:
-    UserService(const std::string& credentials) {
-
-         try
+        try
         {
-
-            connector = std::make_unique<pqxx::connection>(credentials.data());
+            _pool = std::make_unique<ConnectionPool>(credentials, 50);
         }
         catch (const std::exception &e)
         {
             std::cerr << "Error: " << e.what() << std::endl;
+            _pool = nullptr;
         }
     }
 
     grpc::Status Login(grpc::ServerContext *context, const user_service::LoginRequest *request, user_service::LoginResponse *response) override
     {
-        if (!connector || !connector->is_open())
+        if (!_pool)
         {
             return grpc::Status(grpc::StatusCode::UNAVAILABLE, "DB not available");
         }
-        
+
         auto userData = request->user();
         std::string email = userData.email();
         std::string inputPass = userData.password();
-        std::cout << "got login request from : " << email << std::endl;
-        pqxx::read_transaction txn(*connector);
+        auto connection = PooledConnection(*_pool);
+        pqxx::read_transaction txn(connection.get());
         pqxx::result r = txn.exec_params(
             "SELECT id, password FROM users WHERE email = $1", email);
 
@@ -49,6 +50,7 @@ public:
             std::string token = "token_" + std::to_string(id);
             response->set_user_id(id);
             response->set_token(token);
+
             return grpc::Status::OK;
         }
 
@@ -56,5 +58,5 @@ public:
     }
 
 private:
-    std::unique_ptr<pqxx::connection> connector;
+    std::unique_ptr<ConnectionPool> _pool;
 };

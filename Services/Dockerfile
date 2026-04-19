@@ -9,15 +9,10 @@ RUN apt-get update && apt-get install -y \
     protobuf-compiler \
     protobuf-compiler-grpc \
     libgrpc++-dev \
-    libpq-dev \
     libpqxx-dev \
-    libboost-system-dev \
+    libpq-dev \
     pkg-config \
-    && rm -rf /var/lib/apt/lists/*
-# RUN apt-get update && apt-get install -y \
-#     libprotobuf-dev \
-#     protobuf-compiler \
-#     && rm -rf /var/lib/apt/lists/*
+    libboost-system-dev
 
 COPY . .
 

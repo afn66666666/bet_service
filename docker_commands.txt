@@ -3,3 +3,4 @@ docker run -p 8080:4040 asio_server
 
 protoc --proto_path=. --cpp_out=. --grpc_out=. --plugin=protoc-gen-grpc=L:\programming\cpp\vcpkg\installed\x64-windows\tools\grpc\grpc_cpp_plugin.exe user.proto
 
+docker run -p 6868:50051 --name user_service_container -t user_service

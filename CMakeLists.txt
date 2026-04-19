@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.20)
 
 # Если не передан снаружи — подключаем vcpkg автоматически
 if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-    set(CMAKE_TOOLCHAIN_FILE "L:/programming/cpp/vcpkg/scripts/buildsystems/vcpkg.cmake"
-        CACHE STRING "vcpkg toolchain")
+    # set(CMAKE_TOOLCHAIN_FILE "L:/programming/cpp/vcpkg/scripts/buildsystems/vcpkg.cmake"
+    #     CACHE STRING "vcpkg toolchain")
 endif()
 
 project(WipiProject CXX)
