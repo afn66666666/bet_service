@@ -1,29 +1,26 @@
+#pragma once
+
 #include "pqxx/pqxx"
 #include "user_service.grpc.pb.h"
 #include "user_service.pb.h"
 #include "ConnectionPool.h"
 
+#define NOOP_FLAG
+
 class UserService : public user_service::UserService::Service
 {
 
 public:
-public:
-    UserService(const std::string &credentials)
-    {
-
-        try
-        {
-            _pool = std::make_unique<ConnectionPool>(credentials, 50);
-        }
-        catch (const std::exception &e)
-        {
-            std::cerr << "Error: " << e.what() << std::endl;
-            _pool = nullptr;
-        }
-    }
+    UserService(const std::string &credentials);
+   
 
     grpc::Status Login(grpc::ServerContext *context, const user_service::LoginRequest *request, user_service::LoginResponse *response) override
     {
+
+        #ifdef NOOP_FLAG
+            return grpc::Status::OK;
+        #endif
+
         if (!_pool)
         {
             return grpc::Status(grpc::StatusCode::UNAVAILABLE, "DB not available");
