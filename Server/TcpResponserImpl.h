@@ -11,6 +11,14 @@
 namespace asio = boost::asio;
 using tcp = boost::asio::ip::tcp;
 
+/*!
+ * \brief Raw TCP transport implementation of IResponser (Boost.ASIO).
+ *
+ * Accepts incoming TCP connections on port 8080 and deserializes a protobuf
+ * User message from each socket. Single-threaded, blocking accept loop.
+ * Response path is currently commented out — receives only, does not reply.
+ * Intended as an alternative transport to gRPC for low-level benchmarking.
+ */
 class TcpResponserImpl : public IResponser
 {
 public:

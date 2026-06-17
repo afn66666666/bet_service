@@ -16,6 +16,10 @@ RUN apt-get update && apt-get install -y \
 
 COPY . .
 
+# Regenerate pb files with the system protoc (3.12.4) to match the installed libprotobuf
+RUN protoc -I . --cpp_out=. user_service.proto && \
+    protoc -I . --grpc_out=. --plugin=protoc-gen-grpc=$(which grpc_cpp_plugin) user_service.proto
+
 RUN mkdir build && cd build && \
     cmake .. && \
     make user_service -j

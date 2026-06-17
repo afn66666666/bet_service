@@ -5,7 +5,7 @@ UserService::UserService(const std::string &credentials)
 
     try
     {
-        _pool = std::make_unique<ConnectionPool>(credentials, 50);
+        _pool = std::make_unique<PostgresConnectionPool>(credentials, 50);
     }
     catch (const std::exception &e)
     {

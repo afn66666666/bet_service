@@ -2,6 +2,14 @@
 #include "MetaData.h"
 
 #include <iostream
+/*!
+ * \brief Utility for seeding the betting_db with test data.
+ *
+ * testFillUsers() — inserts 1000 randomly generated user records (email + password).
+ * fillUpBalances() — assigns a random balance (5000–100000) to every user row.
+ *
+ * Used once during initial setup; not part of the request path.
+ */
 class DatabaseFiller
 {
 public:

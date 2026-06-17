@@ -6,10 +6,22 @@
 #include <memory>
 #include <iostream>
 
-class ConnectionPool
+/*!
+ * \brief Thread-safe PostgreSQL connection pool.
+ *
+ * Pre-allocates a fixed number of pqxx::connection objects at construction.
+ * Threads acquire a connection via acquire() (blocks if none available) and
+ * release it back via release(). Prevents the overhead of creating a new
+ * database connection per request under concurrent load.
+ *
+ * \note Pool size should be tuned to the PostgreSQL max_connections setting.
+ *       acquire() blocks indefinitely if all connections are held — there is
+ *       no timeout. Use PooledConnection (RAII wrapper) to avoid leaks.
+ */
+class PostgresConnectionPool
 {
 public:
-    ConnectionPool(const std::string &connStr, size_t size)
+    PostgresConnectionPool(const std::string &connStr, size_t size)
     {
         for (size_t i = 0; i < size; ++i)
         {
@@ -52,7 +64,7 @@ private:
 class PooledConnection
 {
 public:
-    PooledConnection(ConnectionPool &pool)
+    PooledConnection(PostgresConnectionPool &pool)
         : _pool(pool), _conn{_pool.acquire()}
     {
     }
@@ -65,6 +77,6 @@ public:
     pqxx::connection &get() { return *_conn; }
 
 private:
-    ConnectionPool &_pool;
+    PostgresConnectionPool &_pool;
     std::unique_ptr<pqxx::connection> _conn;
 };

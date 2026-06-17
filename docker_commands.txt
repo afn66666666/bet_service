@@ -1,6 +1,10 @@
-docker build -t asio_server .
-docker run -p 8080:4040 asio_server
+запуск сервера
+cd L:\programming\cpp\Docker_gRPC\Services
+docker build -t user_service .
+docker run -p 6868:50051 --name user_service_container --rm -t user_service
 
+создание proto файлов
 protoc --proto_path=. --cpp_out=. --grpc_out=. --plugin=protoc-gen-grpc=L:\programming\cpp\vcpkg\installed\x64-windows\tools\grpc\grpc_cpp_plugin.exe user.proto
 
+запуск контейнера
 docker run -p 6868:50051 --name user_service_container -t user_service
