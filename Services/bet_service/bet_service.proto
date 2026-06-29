@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package bet_service;
+
+option go_package = "bet_service/proto";
+
+service BettingService {
+    rpc PlaceBet(PlaceBetRequest) returns (PlaceBetResponse);
+}
+
+message PlaceBetRequest {
+    int64 user_id = 1;
+    string event_id = 2;
+    double amount = 3;
+    string outcome = 4;
+}
+
+message PlaceBetResponse {
+    bool success = 1;
+    string error = 2;
+    double new_balance = 3;
+}

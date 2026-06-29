@@ -1,6 +1,32 @@
-build
-.vscode
+# Build output
+build/
+
+# Compiled binaries / libraries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.o
+*.obj
+*.a
+*.lib
+
+# Go
+*.test
+*.out
+go.work
+go.work.sum
+
+# Generated gRPC / protobuf code (regenerated from .proto, not committed)
 *.pb.cc
 *.pb.h
 *.grpc.pb.cc
 *.grpc.pb.h
+*.pb.go
+
+# IDE / editor
+.vscode/
+
+# Claude Code local settings
+**/.claude/settings.local.json
