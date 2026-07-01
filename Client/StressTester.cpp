@@ -1,8 +1,5 @@
 #include "StressTester.h"
 #include "MetaData.h"
-#include "../Services/UserService.h"
-#include "../Services/user_service.pb.h"
-#include "../Services/user_service.grpc.pb.h"
 
 #include <grpcpp/grpcpp.h>
 #include <array>
@@ -10,34 +7,81 @@
 #include <random>
 #include <iostream>
 
-void StressTester::worker()
+StressTester::StressTester()
 {
-    auto channel = grpc::CreateChannel("localhost:6868",
-                                       grpc::InsecureChannelCredentials());
-
-    auto stub = user_service::UserService::NewStub(channel);
-    while (true)
+    // Unique arg per channel so gRPC does not share one subchannel across
+    // all channels — otherwise all 16 collapse into a single TCP connection
+    for (int i = 0; i < NUM_THREADS; i++)
     {
-        user_service::LoginRequest request;
-        auto data = generateLoginData(70);
-        request.mutable_user()->set_email(data.first);
-        request.mutable_user()->set_password(data.second);
+        grpc::ChannelArguments args;
+        args.SetInt("unique_conn_id", i);
 
-        user_service::LoginResponse response;
-        grpc::ClientContext context;
+        _channels[i] = grpc::CreateCustomChannel("localhost:6868",
+                                                 grpc::InsecureChannelCredentials(),
+                                                 args);
+        _stubs[i] = user_service::UserService::NewStub(_channels[i]);
+    }
+}
 
+void StressTester::refreshCounters()
+{
+    _authorized = 0;
+    _non_authorized = 0;
+    _failed = 0;
 
-        auto status = stub->Login(&context, request, &response);
+    _total_latency_ns = 0;
+    _completed = 0;
+}
 
-        if (status.ok())
+void StressTester::sendRequest(int threadId)
+{
+    user_service::LoginRequest request;
+    auto data = generateLoginData(30);
+    request.mutable_user()->set_email(data.first);
+    request.mutable_user()->set_password(data.second);
+
+    AsyncCall *call = new AsyncCall;
+    call->start_time = std::chrono::steady_clock::now();
+    call->response_reader = _stubs[threadId]->PrepareAsyncLogin(
+        &call->context, request, &_queues[threadId]);
+
+    call->response_reader->StartCall();
+    call->response_reader->Finish(&call->reply, &call->status, (void *)call);
+}
+
+void StressTester::run(int requestsPerThread, int threadId)
+{
+    for (int i = 0; i < requestsPerThread; ++i)
+    {
+        sendRequest(threadId);
+    }
+
+    void *tag;
+    bool isOk;
+    while (_queues[threadId].Next(&tag, &isOk))
+    {
+        auto call = static_cast<AsyncCall *>(tag);
+
+        auto latency = std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::steady_clock::now() - call->start_time);
+        _total_latency_ns.fetch_add(latency.count());
+        _completed.fetch_add(1);
+
+        if (isOk && call->status.ok())
         {
-            success++;
+            _authorized++;
+        }
+        else if (call->status.error_code() == grpc::StatusCode::NOT_FOUND)
+        {
+            _non_authorized++;
         }
         else
         {
-            // std::cout << status.error_message() << std::endl;
-            failed++;
+            _failed++;
         }
+
+        delete call;
+        sendRequest(threadId);
     }
 }
 
@@ -47,14 +91,15 @@ std::pair<std::string, std::string> StressTester::generateLoginData(int chance) 
     std::string pass = "invalid_password";
 
     thread_local std::mt19937 gen(std::random_device{}());
-    std::uniform_int_distribution<int> randVal(1, 100);
-    std::uniform_int_distribution<int> indexDist(0, emails.size() - 1);
-    int chanceVal = randVal(gen);
-    if (chanceVal >= chance)
+    // std::uniform_int_distribution<int> randVal(1, 100);
+    // std::uniform_int_distribution<int> indexDist(0, emails.size() - 1);
+    // int chanceVal = randVal(gen);
+    // if (chanceVal >= chance)
+    if (true)
     {
-        int ii = indexDist(gen);
-        email = emails[ii];
-        pass = passwords[ii];
+        // int ii = indexDist(gen);
+        email = emails[70];
+        pass = passwords[70];
     }
     return {email, pass};
 }
@@ -62,29 +107,29 @@ std::pair<std::string, std::string> StressTester::generateLoginData(int chance) 
 void StressTester::testUserService()
 {
 
-    int threads = 1;
-
-    std::vector<std::thread> pool;
-
-    for (int i = 0; i < threads; ++i)
+    for (int i = 0; i < NUM_THREADS; i++)
     {
-        pool.emplace_back(&StressTester::worker, this);
+        _workers[i] = std::thread(&StressTester::run, this, requestsPerThread, i);
     }
 
     while (true)
     {
         std::this_thread::sleep_for(std::chrono::seconds(1));
+        int64_t comp = _completed.load();
+        double avg_ms = comp > 0 ? (_total_latency_ns.load() / comp) / 1e6 : 0;
         std::cout << "RPS ~ "
-                  << success.load() << " success, "
-                  << failed.load() << " failed"
+                  << _authorized.load() << " authorized, "
+                  << _non_authorized.load() << " invalid login\\pass, "
+                  << _failed.load() << " failed, "
+                  << avg_ms << " ms avg latency"
                   << std::endl;
-
-        success = 0;
-        failed = 0;
+        refreshCounters();
     }
 
-    for (auto &t : pool)
-        t.join();
+    for (int i = 0; i < NUM_THREADS; i++)
+    {
+        _workers[i].join();
+    }
 }
 
 void utilDatabaseConnection()

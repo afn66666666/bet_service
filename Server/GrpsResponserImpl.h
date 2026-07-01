@@ -4,6 +4,12 @@
 #include "SignInServiceImpl.h"
 
 
+/*!
+ * \brief gRPC transport implementation of IResponser.
+ *
+ * Builds a synchronous gRPC server on port 8080, registers SignInServiceImpl,
+ * and blocks in server->Wait() until process termination.
+ */
 class GrpcResponserImpl : public IResponser
 {
 public:

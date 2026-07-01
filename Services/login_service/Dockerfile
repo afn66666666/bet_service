@@ -9,20 +9,20 @@ RUN apt-get update && apt-get install -y \
     protobuf-compiler \
     protobuf-compiler-grpc \
     libgrpc++-dev \
-    libpq-dev \
     libpqxx-dev \
-    libboost-system-dev \
+    libpq-dev \
+    libsodium-dev \
     pkg-config \
-    && rm -rf /var/lib/apt/lists/*
-# RUN apt-get update && apt-get install -y \
-#     libprotobuf-dev \
-#     protobuf-compiler \
-#     && rm -rf /var/lib/apt/lists/*
+    libboost-system-dev
 
 COPY . .
 
+# Regenerate pb files with the system protoc (3.12.4) to match the installed libprotobuf
+RUN protoc -I . --cpp_out=. user_service.proto && \
+    protoc -I . --grpc_out=. --plugin=protoc-gen-grpc=$(which grpc_cpp_plugin) user_service.proto
+
 RUN mkdir build && cd build && \
-    cmake .. && \
+    cmake -DCMAKE_BUILD_TYPE=Release .. && \
     make user_service -j
 
 EXPOSE 50051

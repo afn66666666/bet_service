@@ -1,5 +1,0 @@
-docker build -t asio_server .
-docker run -p 8080:4040 asio_server
-
-protoc --proto_path=. --cpp_out=. --grpc_out=. --plugin=protoc-gen-grpc=L:\programming\cpp\vcpkg\installed\x64-windows\tools\grpc\grpc_cpp_plugin.exe user.proto
-

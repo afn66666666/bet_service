@@ -5,6 +5,13 @@
 
 #include "server_config.grpc.pb.h"
 
+/*!
+ * \brief gRPC service implementation for the Server.SignIn RPC (server_config.proto).
+ *
+ * Handles user sign-in requests from the gateway Server component (port 8080).
+ * Currently logs user info and echoes back the user id with success=true.
+ * Intended to be extended with actual authentication logic.
+ */
 class SignInServiceImpl : public server_config::Server::Service
 {
 public:
