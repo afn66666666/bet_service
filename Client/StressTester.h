@@ -10,7 +10,8 @@
 #include "../Services/login_service/user_service.pb.h"
 #include "../Services/login_service/user_service.grpc.pb.h"
 
-static constexpr int NUM_THREADS = 8;
+static constexpr int NUM_THREADS = 16;
+const int requestsPerThread = 128;
 
 /*!
  * \brief Async gRPC load tester for UserService.

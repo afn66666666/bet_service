@@ -22,8 +22,9 @@ constexpr int connectionType = 1;
 
 int main()
 {
-   // auto stressTester = std::make_unique<StressTester>();
-   // stressTester->testUserService();
-   DatabaseFiller filler;
-   filler.testFillUsers();
+   auto stressTester = std::make_unique<StressTester>();
+   stressTester->testUserService();
+   
+   // DatabaseFiller filler;
+   // filler.testFillUsers();
 }

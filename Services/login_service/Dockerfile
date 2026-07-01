@@ -22,7 +22,7 @@ RUN protoc -I . --cpp_out=. user_service.proto && \
     protoc -I . --grpc_out=. --plugin=protoc-gen-grpc=$(which grpc_cpp_plugin) user_service.proto
 
 RUN mkdir build && cd build && \
-    cmake .. && \
+    cmake -DCMAKE_BUILD_TYPE=Release .. && \
     make user_service -j
 
 EXPOSE 50051

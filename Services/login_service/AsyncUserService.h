@@ -6,6 +6,8 @@
 #include "user_service.grpc.pb.h"
 #include "ConnectionPool.h"
 
+    static constexpr int HANDLERS_PER_CQ = 200;
+
 /*!
  * \brief Async gRPC server for UserService.
  *
@@ -32,8 +34,6 @@ public:
 
 private:
     void workerLoop(grpc::ServerCompletionQueue *cq);
-
-    static constexpr int HANDLERS_PER_CQ = 200;
 
     int _numThreads;
     std::unique_ptr<PostgresConnectionPool> _pool;

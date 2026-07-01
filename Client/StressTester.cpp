@@ -9,11 +9,13 @@
 
 StressTester::StressTester()
 {
-    grpc::ChannelArguments args;
-    args.SetInt(GRPC_ARG_MAX_CONCURRENT_STREAMS, 0);
-
+    // Unique arg per channel so gRPC does not share one subchannel across
+    // all channels — otherwise all 16 collapse into a single TCP connection
     for (int i = 0; i < NUM_THREADS; i++)
     {
+        grpc::ChannelArguments args;
+        args.SetInt("unique_conn_id", i);
+
         _channels[i] = grpc::CreateCustomChannel("localhost:6868",
                                                  grpc::InsecureChannelCredentials(),
                                                  args);
@@ -104,7 +106,6 @@ std::pair<std::string, std::string> StressTester::generateLoginData(int chance) 
 
 void StressTester::testUserService()
 {
-    const int requestsPerThread = 2000;
 
     for (int i = 0; i < NUM_THREADS; i++)
     {
