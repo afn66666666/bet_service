@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     libgrpc++-dev \
     libpqxx-dev \
     libpq-dev \
+    libsodium-dev \
     pkg-config \
     libboost-system-dev
 

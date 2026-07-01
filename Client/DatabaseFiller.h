@@ -1,7 +1,11 @@
 #include "pqxx/pqxx"
 #include "MetaData.h"
 
-#include <iostream
+#include <iostream>
+#include <stdexcept>
+#include <string>
+#include <memory>
+#include <sodium.h>
 /*!
  * \brief Utility for seeding the betting_db with test data.
  *
@@ -13,8 +17,17 @@
 class DatabaseFiller
 {
 public:
-    void DatabaseFiller::testFillUsers()
+    DatabaseFiller()
     {
+        connector = std::make_unique<pqxx::connection>(
+            "host=localhost port=5432 dbname=betting_db user=betting_admin password=kiba");
+    }
+
+    void testFillUsers()
+    {
+        if (sodium_init() < 0)
+            throw std::runtime_error("libsodium init failed");
+
         if (connector->is_open())
         {
             pqxx::work txn(*connector);
@@ -27,16 +40,25 @@ public:
                 int uniqueNum = 1000 + std::rand() % 8999;
                 std::string email = names[nameIndex] + std::string("_") + surnames[surnameIndex] + "_" + std::to_string(uniqueNum) + "@gmail.com";
                 std::string pass = "pass_" + std::to_string(uniqueNum);
-                txn.exec_params(
+
+                // hashing password (Argon2id; salt + params embedded in the string)
+                char hashed[crypto_pwhash_STRBYTES];
+                if (crypto_pwhash_str(
+                        hashed, pass.c_str(), pass.size(),
+                        crypto_pwhash_OPSLIMIT_INTERACTIVE,   // t
+                        crypto_pwhash_MEMLIMIT_INTERACTIVE) != 0) // m  (~64 MiB)
+                    throw std::runtime_error("password hashing failed (out of memory)");
+
+                auto rr = txn.exec_params(
                     "INSERT INTO users(email, password) VALUES ($1, $2)",
                     email,
-                    pass);
+                    std::string(hashed));
             }
             txn.commit();
         }
     }
 
-    void DatabaseFiller::fillUpBalances()
+    void fillUpBalances()
     {
         if (connector->is_open())
         {

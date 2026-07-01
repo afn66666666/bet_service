@@ -2,10 +2,13 @@
 
 #include <iostream>
 #include <memory>
+#include <thread>
+#include <atomic>
+#include <chrono>
 
-#include "../Services/UserService.h"
-#include "../Services/user_service.pb.h"
-#include "../Services/user_service.grpc.pb.h"
+#include "../Services/login_service/UserService.h"
+#include "../Services/login_service/user_service.pb.h"
+#include "../Services/login_service/user_service.grpc.pb.h"
 
 static constexpr int NUM_THREADS = 8;
 

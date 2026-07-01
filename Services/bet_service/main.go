@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc"
 
 	pb "bet_service/proto"
@@ -18,11 +19,17 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	pool, err := NewDBPool(ctx, "host=host.docker.internal port=5432 dbname=betting_db user=betting_admin password=kiba")
-	if err != nil {
-		log.Fatalf("db connection failed: %v", err)
+	// In NOOP mode PlaceBet never touches the DB, so skip the pool entirely —
+	// the container then runs without a reachable Postgres.
+	var pool *pgxpool.Pool
+	if !noopMode {
+		p, err := NewDBPool(ctx, "host=host.docker.internal port=5432 dbname=betting_db user=betting_admin password=kiba")
+		if err != nil {
+			log.Fatalf("db connection failed: %v", err)
+		}
+		defer p.Close()
+		pool = p
 	}
-	defer pool.Close()
 
 	lis, err := net.Listen("tcp", listenAddr)
 	if err != nil {

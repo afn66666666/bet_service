@@ -14,14 +14,6 @@ import (
 	pb "bet_service/proto"
 )
 
-// BetGun is a load tester ("пулемёт") for the BettingService.PlaceBet RPC.
-//
-// It holds a fixed set of known user IDs and fires PlaceBet requests at the
-// server from numWorkers goroutines over a single shared gRPC connection
-// (HTTP/2 multiplexes, so one ClientConn is enough for the simple case).
-//
-// Analogous to the C++ StressTester, but the goroutine model removes the
-// CompletionQueue bookkeeping: each worker just loops on a blocking call.
 type BetGun struct {
 	addr       string
 	userIDs    []int64
@@ -107,11 +99,7 @@ func (g *BetGun) sendOne(ctx context.Context, rng *rand.Rand) {
 }
 
 // generateBet produces a request for a random known user.
-//
-// TODO: bet policy is a placeholder — fixed amount, single event/outcome.
-// Decide later whether to randomize event_id / outcome / amount, and whether
-// to top up balances first (otherwise after a few bets everything is
-// "insufficient balance" and we measure rejections, not the happy path).
+
 func (g *BetGun) generateBet(rng *rand.Rand) *pb.PlaceBetRequest {
 	userID := g.userIDs[rng.Intn(len(g.userIDs))]
 

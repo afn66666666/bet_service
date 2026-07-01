@@ -32,5 +32,6 @@ target_link_libraries(user_service PRIVATE
     protobuf
     pqxx
     pq
+    sodium
     Boost::system
 )

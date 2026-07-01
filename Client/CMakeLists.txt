@@ -19,13 +19,14 @@ find_package(gRPC REQUIRED)
  find_package(Protobuf    CONFIG REQUIRED)
 find_package(Boost       REQUIRED COMPONENTS system)
  find_package(libpqxx     CONFIG REQUIRED)
+ find_package(unofficial-sodium CONFIG REQUIRED)
 
 # ── Сгенерированные protobuf-файлы (общие для клиента и сервера) ──────────────
 set(PROTO_SOURCES
         ../Server/server_config.pb.cc
         ../Server/server_config.grpc.pb.cc
-        ../Services/user_service.pb.cc
-        ../Services/user_service.grpc.pb.cc
+        ../Services/login_service/user_service.pb.cc
+        ../Services/login_service/user_service.grpc.pb.cc
 )
 
 # ── client ────────────────────────────────────────────────────────────────
@@ -38,7 +39,7 @@ add_executable(client
 target_include_directories(client PRIVATE
     Client
     ../Server   # server_config.pb.h / server_config.grpc.pb.h
-    ../Services
+    ../Services/login_service
 )
 
 target_link_libraries(client PRIVATE
@@ -51,4 +52,5 @@ target_link_libraries(client PRIVATE
     libpqxx::pqxx
     # pqxx
     # pq
+    unofficial-sodium::sodium
 )
