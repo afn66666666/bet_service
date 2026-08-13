@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	pb "bet_service/proto"
 )
@@ -25,6 +27,11 @@ const noopMode = true
 // PlaceBet validates the user's balance and records a bet.
 
 func (s *BettingServer) PlaceBet(ctx context.Context, req *pb.PlaceBetRequest) (*pb.PlaceBetResponse, error) {
+	userID, ok := UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "authenticated user is missing")
+	}
+
 	if noopMode {
 		// Mock response: skip the DB entirely, pretend the bet went through.
 		return &pb.PlaceBetResponse{Success: true, NewBalance: 1000}, nil
@@ -38,7 +45,7 @@ func (s *BettingServer) PlaceBet(ctx context.Context, req *pb.PlaceBetRequest) (
 	defer transaction.Rollback(ctx)
 	var balance float64
 	//load balance
-	err = transaction.QueryRow(ctx, "SELECT balance FROM users WHERE id = $1 FOR UPDATE", req.UserId).Scan(&balance)
+	err = transaction.QueryRow(ctx, "SELECT balance FROM users WHERE id = $1 FOR UPDATE", userID).Scan(&balance)
 	if err != nil {
 		return &pb.PlaceBetResponse{Success: false, Error: err.Error()}, nil
 	}
@@ -49,14 +56,14 @@ func (s *BettingServer) PlaceBet(ctx context.Context, req *pb.PlaceBetRequest) (
 
 	//update balance
 	newBalance := balance - req.Amount
-	_, err = transaction.Exec(ctx, "UPDATE users SET balance = $1 WHERE id = $2", newBalance, req.UserId)
+	_, err = transaction.Exec(ctx, "UPDATE users SET balance = $1 WHERE id = $2", newBalance, userID)
 	if err != nil {
 		return &pb.PlaceBetResponse{Success: false, Error: err.Error()}, nil
 	}
 
 	//adding bet
 	_, err = transaction.Exec(ctx, "INSERT INTO bets(user_id, event_id, amount, outcome) VALUES ($1, $2, $3, $4)",
-		req.UserId, req.EventId, req.Amount, req.Outcome)
+		userID, req.EventId, req.Amount, req.Outcome)
 	if err != nil {
 		return &pb.PlaceBetResponse{Success: false, Error: err.Error()}, nil
 	}

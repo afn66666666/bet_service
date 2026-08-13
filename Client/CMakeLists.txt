@@ -21,10 +21,8 @@ find_package(Boost       REQUIRED COMPONENTS system)
  find_package(libpqxx     CONFIG REQUIRED)
  find_package(unofficial-sodium CONFIG REQUIRED)
 
-# ── Сгенерированные protobuf-файлы (общие для клиента и сервера) ──────────────
+# ── Сгенерированные protobuf-файлы ──────────────
 set(PROTO_SOURCES
-        ../Server/server_config.pb.cc
-        ../Server/server_config.grpc.pb.cc
         ../Services/login_service/user_service.pb.cc
         ../Services/login_service/user_service.grpc.pb.cc
 )
@@ -32,13 +30,12 @@ set(PROTO_SOURCES
 # ── client ────────────────────────────────────────────────────────────────
 add_executable(client
     main.cpp
-    StressTester.cpp
+    LoginSimulator.cpp
      ${PROTO_SOURCES}
 )
 
 target_include_directories(client PRIVATE
     Client
-    ../Server   # server_config.pb.h / server_config.grpc.pb.h
     ../Services/login_service
 )
 

@@ -1,5 +1,9 @@
 # Build output
 build/
+secrets/
+
+# compiled binaries
+/Services/bet_service/bet_service
 
 # Compiled binaries / libraries
 *.exe
@@ -30,3 +34,5 @@ go.work.sum
 
 # Claude Code local settings
 **/.claude/settings.local.json
+
+AGENTS.md

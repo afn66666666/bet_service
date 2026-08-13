@@ -3,9 +3,10 @@
 #include <grpcpp/grpcpp.h>
 
 #include "UserService.h"
-#include "user_service.pb.h"
-#include "user_service.grpc.pb.h"
+#include <user_service.pb.h>
+#include <user_service.grpc.pb.h>
 #include "ConnectionPool.h"
+#include "JWTTokenSigner.h"
 
 /*!
  * \brief Per-request state machine for async gRPC Login RPC handling.
@@ -23,7 +24,8 @@
 public:
     CallHandler(user_service::UserService::AsyncService *service,
                 grpc::ServerCompletionQueue *cq,
-                PostgresConnectionPool *pool);
+                PostgresConnectionPool *pool,
+                JwtTokenSigner *jwtSigner);
     enum class State
     {
         WAIT,
@@ -47,4 +49,5 @@ private:
     grpc::ServerAsyncResponseWriter<user_service::LoginResponse> _responder;
     State _state = State::WAIT;
     PostgresConnectionPool *_pool; // не владеет, borrowed ptr
+    JwtTokenSigner *_jwtSigner; // не владеет, borrowed ptr
 };

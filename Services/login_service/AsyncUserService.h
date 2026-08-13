@@ -3,8 +3,9 @@
 #include <grpcpp/grpcpp.h>
 #include <vector>
 #include <thread>
-#include "user_service.grpc.pb.h"
+#include <user_service.grpc.pb.h>
 #include "ConnectionPool.h"
+#include "JWTTokenSigner.h"
 
     static constexpr int HANDLERS_PER_CQ = 200;
 
@@ -25,7 +26,8 @@ class AsyncUserService
 public:
     AsyncUserService(const std::string &address,
                      const std::string &dbCredentials,
-                     int numThreads);
+                     int numThreads,
+                     JwtConfig jwtConfig);
 
     ~AsyncUserService();
 
@@ -37,6 +39,7 @@ private:
 
     int _numThreads;
     std::unique_ptr<PostgresConnectionPool> _pool;
+    std::unique_ptr<JwtTokenSigner> _jwtSigner;
     user_service::UserService::AsyncService _asyncService;
     std::vector<std::unique_ptr<grpc::ServerCompletionQueue>> _cqs;
     std::unique_ptr<grpc::Server> _server;

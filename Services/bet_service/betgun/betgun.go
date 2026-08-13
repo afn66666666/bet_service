@@ -112,7 +112,7 @@ func (g *BetGun) generateBet(rng *rand.Rand) *pb.PlaceBetRequest {
 }
 
 // report prints aggregate stats once per second and resets the counters,
-// mirroring StressTester::testUserService output.
+// mirroring LoginSimulator::testUserService output.
 func (g *BetGun) report(ctx context.Context) {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()

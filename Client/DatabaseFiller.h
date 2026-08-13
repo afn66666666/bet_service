@@ -9,7 +9,8 @@
 /*!
  * \brief Utility for seeding the betting_db with test data.
  *
- * testFillUsers() — inserts 1000 randomly generated user records (email + password).
+ * testFillUsers() — inserts the 1000 MetaData users (email + Argon2id-hashed password),
+ *                   index-aligned with emails[]/passwords[] so LoginSimulator can log in.
  * fillUpBalances() — assigns a random balance (5000–100000) to every user row.
  *
  * Used once during initial setup; not part of the request path.
@@ -31,15 +32,12 @@ public:
         if (connector->is_open())
         {
             pqxx::work txn(*connector);
-            srand(time(0));
 
-            for (size_t i = 0; i < 1000; ++i)
+            // Seed straight from the MetaData arrays (emails[i] <-> passwords[i]),
+            // so LoginSimulator can authenticate by the same index.
+            for (size_t i = 0; i < emails.size(); ++i)
             {
-                int nameIndex = std::rand() % names.size();
-                int surnameIndex = std::rand() % surnames.size();
-                int uniqueNum = 1000 + std::rand() % 8999;
-                std::string email = names[nameIndex] + std::string("_") + surnames[surnameIndex] + "_" + std::to_string(uniqueNum) + "@gmail.com";
-                std::string pass = "pass_" + std::to_string(uniqueNum);
+                std::string pass = passwords[i];
 
                 // hashing password (Argon2id; salt + params embedded in the string)
                 char hashed[crypto_pwhash_STRBYTES];
@@ -49,9 +47,10 @@ public:
                         crypto_pwhash_MEMLIMIT_INTERACTIVE) != 0) // m  (~64 MiB)
                     throw std::runtime_error("password hashing failed (out of memory)");
 
-                auto rr = txn.exec_params(
-                    "INSERT INTO users(email, password) VALUES ($1, $2)",
-                    email,
+                txn.exec_params(
+                    "INSERT INTO users(email, password) VALUES ($1, $2) "
+                    "ON CONFLICT (email) DO NOTHING",
+                    emails[i],
                     std::string(hashed));
             }
             txn.commit();

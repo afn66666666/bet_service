@@ -2,11 +2,11 @@
 
 #include <atomic>
 #include "pqxx/pqxx"
-#include "user_service.grpc.pb.h"
-#include "user_service.pb.h"
+#include <user_service.grpc.pb.h>
+#include <user_service.pb.h>
 #include "ConnectionPool.h"
 
-#define NOOP_FLAG
+// #define NOOP_FLAG
 
 /*!
  * \brief gRPC service implementation for UserService.Login RPC (user_service.proto).

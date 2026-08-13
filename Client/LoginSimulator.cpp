@@ -1,4 +1,4 @@
-#include "StressTester.h"
+#include "LoginSimulator.h"
 #include "MetaData.h"
 
 #include <grpcpp/grpcpp.h>
@@ -7,7 +7,7 @@
 #include <random>
 #include <iostream>
 
-StressTester::StressTester()
+LoginSimulator::LoginSimulator()
 {
     // Unique arg per channel so gRPC does not share one subchannel across
     // all channels — otherwise all 16 collapse into a single TCP connection
@@ -23,7 +23,7 @@ StressTester::StressTester()
     }
 }
 
-void StressTester::refreshCounters()
+void LoginSimulator::refreshCounters()
 {
     _authorized = 0;
     _non_authorized = 0;
@@ -33,10 +33,10 @@ void StressTester::refreshCounters()
     _completed = 0;
 }
 
-void StressTester::sendRequest(int threadId)
+void LoginSimulator::sendRequest(int threadId)
 {
     user_service::LoginRequest request;
-    auto data = generateLoginData(30);
+    auto data = generateLoginData(0);
     request.mutable_user()->set_email(data.first);
     request.mutable_user()->set_password(data.second);
 
@@ -49,7 +49,7 @@ void StressTester::sendRequest(int threadId)
     call->response_reader->Finish(&call->reply, &call->status, (void *)call);
 }
 
-void StressTester::run(int requestsPerThread, int threadId)
+void LoginSimulator::run(int requestsPerThread, int threadId)
 {
     for (int i = 0; i < requestsPerThread; ++i)
     {
@@ -85,31 +85,28 @@ void StressTester::run(int requestsPerThread, int threadId)
     }
 }
 
-std::pair<std::string, std::string> StressTester::generateLoginData(int chance) const
+std::pair<std::string, std::string> LoginSimulator::generateLoginData(int chance) const
 {
-    std::string email = "invalid_gmail";
-    std::string pass = "invalid_password";
-
     thread_local std::mt19937 gen(std::random_device{}());
-    // std::uniform_int_distribution<int> randVal(1, 100);
-    // std::uniform_int_distribution<int> indexDist(0, emails.size() - 1);
-    // int chanceVal = randVal(gen);
-    // if (chanceVal >= chance)
-    if (true)
-    {
-        // int ii = indexDist(gen);
-        email = emails[70];
-        pass = passwords[70];
-    }
-    return {email, pass};
+    thread_local std::uniform_int_distribution<int> randVal(1, 100);
+    thread_local std::uniform_int_distribution<size_t> indexDist(0, emails.size() - 1);
+
+    // 'chance'% of requests use bogus credentials (exercise the NOT_FOUND path);
+    // the rest pick a random valid user. emails[i] and passwords[i] are index-
+    // aligned with what DatabaseFiller hashed into the DB, so the login succeeds.
+    if (randVal(gen) <= chance)
+        return {"invalid_gmail", "invalid_password"};
+
+    size_t i = indexDist(gen);
+    return {emails[i], passwords[i]};
 }
 
-void StressTester::testUserService()
+void LoginSimulator::testUserService()
 {
 
     for (int i = 0; i < NUM_THREADS; i++)
     {
-        _workers[i] = std::thread(&StressTester::run, this, requestsPerThread, i);
+        _workers[i] = std::thread(&LoginSimulator::run, this, requestsPerThread, i);
     }
 
     while (true)

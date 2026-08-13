@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net"
+	"os"
 	"os/signal"
 	"syscall"
 
@@ -35,8 +36,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("listen failed: %v", err)
 	}
+	verifier, err := checkJwtPublicKey()
+	if err != nil {
+		return
+	}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(AuthInterceptor(verifier)))
 	pb.RegisterBettingServiceServer(grpcServer, NewBettingServer(pool))
 
 	go func() {
@@ -49,4 +54,17 @@ func main() {
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("serve failed: %v", err)
 	}
+}
+
+func checkJwtPublicKey() (*TokenVerifier, error) {
+	publicKeyPath := os.Getenv("JWT_PUBLIC_KEY_PATH")
+	if publicKeyPath == "" {
+		log.Fatal("JWT_PUBLIC_KEY_PATH is required")
+	}
+	verifier, err := CreateTokenVerifier(publicKeyPath)
+	if err != nil {
+		log.Fatalf("initialize JWT verifier: %v", err)
+	}
+
+	return verifier, err
 }

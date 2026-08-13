@@ -11,25 +11,24 @@
 #include "../Services/login_service/user_service.grpc.pb.h"
 
 static constexpr int NUM_THREADS = 16;
-const int requestsPerThread = 128;
+const int requestsPerThread = 1;
 
 /*!
- * \brief Async gRPC load tester for UserService.
+ * \brief Async gRPC load generator for login_service (Login RPC).
  *
  * Spawns NUM_THREADS worker threads, each with its own gRPC channel, stub,
- * and CompletionQueue. Each thread fires requestsPerThread async Login RPCs
- * upfront, then processes completions in a tight loop — maintaining a fixed
- * window of in-flight requests for maximum throughput.
+ * and CompletionQueue. Each thread keeps requestsPerThread async Login RPCs
+ * in flight, processing completions in a tight loop — a fixed window of
+ * concurrent requests.
  *
  * Reports RPS, authorized/failed counts, and average latency once per second.
  *
- * \note generateLoginData() currently hardcodes emails[70] (randomization
- *       is commented out) — all requests hit a single user record.
+ * generateLoginData() picks a random valid user (emails[i]/passwords[i]).
  */
-class StressTester
+class LoginSimulator
 {
 public:
-    StressTester();
+    LoginSimulator();
     void testUserService();
     std::pair<std::string, std::string> generateLoginData(int chance) const;
 

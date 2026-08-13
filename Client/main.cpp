@@ -8,7 +8,7 @@
 #include "../Services/login_service/UserService.h"
 #include "../Services/login_service/user_service.pb.h"
 #include "../Services/login_service/user_service.grpc.pb.h"
-#include "StressTester.h"
+#include "LoginSimulator.h"
 #include "DatabaseFiller.h"
 
 namespace asio = boost::asio;
@@ -22,8 +22,8 @@ constexpr int connectionType = 1;
 
 int main()
 {
-   auto stressTester = std::make_unique<StressTester>();
-   stressTester->testUserService();
+   auto loginSim = std::make_unique<LoginSimulator>();
+   loginSim->testUserService();
    
    // DatabaseFiller filler;
    // filler.testFillUsers();
